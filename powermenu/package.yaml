@@ -30,7 +30,7 @@ library:
   source-dirs: src
 
 executables:
-  powermenu-exe:
+  powermenu:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
