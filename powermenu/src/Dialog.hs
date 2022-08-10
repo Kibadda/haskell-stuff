@@ -38,24 +38,22 @@ opts =
 fullOpts :: O.ParserInfo Opts
 fullOpts = O.info (O.helper <*> opts) (O.fullDesc <> O.header "powermenu")
 
-data Choice = Cancel | Shutdown | Reboot | Lock | Hibernate | Suspend | Logout deriving (Show, Eq, Read)
+data Choice = Cancel | Shutdown | Reboot | Lock | Suspend | Logout deriving (Show, Eq, Read)
 
 index :: Choice -> Int
-index Cancel = 0
-index Shutdown = 1
-index Reboot = 2
-index Lock = 3
-index Hibernate = 4
-index Suspend = 5
-index Logout = 6
+index Shutdown = 0
+index Reboot = 1
+index Lock = 2
+index Suspend = 3
+index Logout = 4
+index Cancel = 5
 
 choices :: [(String, Choice)]
 choices =
-  [ ("Cancel", Cancel),
-    ("Shutdown", Shutdown),
+  -- [ ("Cancel", Cancel),
+  [ ("Shutdown", Shutdown),
     ("Reboot", Reboot),
     ("Lock", Lock),
-    ("Hibernate", Hibernate),
     ("Suspend", Suspend),
     ("Logout", Logout)
   ]
@@ -68,13 +66,16 @@ drawUI d = [ui]
 appEvent :: D.Dialog Choice -> T.BrickEvent () e -> T.EventM () (T.Next (D.Dialog Choice))
 appEvent d (T.VtyEvent ev) =
   case ev of
-    V.EvKey V.KEsc [] -> M.halt . initialState $ Just Cancel
+    V.EvKey V.KEsc [] -> M.halt cancelState
     V.EvKey V.KEnter [] -> M.halt d
     _ -> M.continue =<< D.handleDialogEvent ev d
 appEvent d _ = M.continue d
 
 initialState :: Maybe Choice -> D.Dialog Choice
 initialState choice = D.dialog (Just "Powermenu") (Just (maybe 0 index choice, choices)) 100
+
+cancelState :: D.Dialog Choice
+cancelState = D.dialog (Just "Powermenu") (Just (0, [("Cancel", Cancel)])) 100
 
 theMap :: A.AttrMap
 theMap =
@@ -103,7 +104,6 @@ executeCommand choice =
       Shutdown -> callCommand "systemctl poweroff"
       Reboot -> callCommand "systemctl reboot"
       Lock -> callCommand "i3lock -c 000000"
-      Hibernate -> callCommand "systemctl hibernate"
       Suspend -> callCommand "systemctl suspend"
       Logout -> callCommand "loginctl"
     Nothing -> exitFailure
